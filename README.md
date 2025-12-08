@@ -1,5 +1,6 @@
 # AI Assistant for Google Gemini
 Quick AI queries using Google's Gemini API directly from Flow Launcher.
+
 ## Features
 - 🌍 Multilingual support (English & Spanish)
 - 🚀 Multiple Gemini models
@@ -7,7 +8,7 @@ Quick AI queries using Google's Gemini API directly from Flow Launcher.
 
 ## Requirements
 - Flow Launcher
-- Google Gemini API Key
+- Requests
 
 ## License
 MIT
