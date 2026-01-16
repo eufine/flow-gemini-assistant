@@ -157,3 +157,8 @@ class Main(FlowLauncher):
     def open_in_notepad(self, text, query):
         """Open text in Notepad"""
         open_in_notepad(text, query)
+
+    def launch_peek(self, path):
+        """Launch PowerToys Peek"""
+        from plugin.utils import launch_peek
+        launch_peek(path)
