@@ -10,6 +10,31 @@ import shutil
 from plugin.settings import icon_path
 from plugin.extensions import _l
 
+CACHE_DIR = os.path.join(os.path.expanduser("~"), ".gemini_cache")
+
+def cleanup_cache(keep_last=1):
+    """
+    Clean up old files in the cache directory, keeping only the 'keep_last' most recent ones.
+    """
+    try:
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
+            return
+
+        files = sorted(
+            [os.path.join(CACHE_DIR, f) for f in os.listdir(CACHE_DIR)],
+            key=os.path.getmtime
+        )
+
+        if len(files) > keep_last:
+            for f in files[:-keep_last]:
+                try:
+                    os.remove(f)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
 def api_request(query, model, api_key):
         try:
             clean_query = query.replace("||", "").strip()
@@ -23,21 +48,24 @@ def api_request(query, model, api_key):
             
             texto_respuesta = response.json()['candidates'][0]['content']['parts'][0]['text']
             
-            # Create temp file in a user-accessible directory to avoid permission issues
             try:
-                cache_dir = os.path.join(os.path.expanduser("~"), ".gemini_cache")
-                if not os.path.exists(cache_dir):
-                    os.makedirs(cache_dir)
-                    
-                # Clean up old files (optional, keeps last 10)
-                files = sorted([os.path.join(cache_dir, f) for f in os.listdir(cache_dir)], key=os.path.getmtime)
-                if len(files) > 10:
-                    for f in files[:-10]:
-                        try: os.remove(f)
-                        except: pass
+                cleanup_cache()
 
-                fd, preview_path = tempfile.mkstemp(prefix="gemini_preview_", suffix=".txt", dir=cache_dir, text=True)
-                with os.fdopen(fd, 'w', encoding='utf-8') as f:
+                # Generate CamelCase filename from query
+                # Keep alphanumeric and spaces to allow splitting, then title case properties
+                words = "".join([c if c.isalnum() else " " for c in clean_query]).split()
+                camel_name = "".join([w.capitalize() for w in words])
+                
+                if not camel_name:
+                    camel_name = "GeminiResponse"
+                    
+                # Truncate to avoid path limit issues (max 50 chars for name)
+                camel_name = camel_name[:50]
+                
+                preview_filename = f"{camel_name}.md"
+                preview_path = os.path.join(CACHE_DIR, preview_filename)
+                
+                with open(preview_path, 'w', encoding='utf-8') as f:
                     f.write(texto_respuesta)
             except Exception as e:
                 # Fallback to icon check
@@ -107,7 +135,10 @@ def launch_peek(path):
         
 def open_in_notepad(text, query):
         try:
-            fd, path = tempfile.mkstemp(prefix=query[:20].replace(' ', '_') + "_", suffix=".txt", text=True)
+            cleanup_cache()
+            
+            clean_prefix = query[:20].replace(' ', '_').replace('||', '')
+            fd, path = tempfile.mkstemp(prefix=f"{clean_prefix}_", suffix=".txt", dir=CACHE_DIR, text=True)
             with os.fdopen(fd, 'w', encoding='utf-8') as f:
                 f.write(text)
             os.startfile(path)

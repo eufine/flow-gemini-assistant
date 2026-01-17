@@ -88,6 +88,41 @@ class Main(FlowLauncher):
                     }
                 })
             return results
+
+
+        # Nueva configuración de límite de caché
+        if q_lower.startswith("setlimit"):
+            try:
+                limit_str = param[8:].strip()
+                if not limit_str:
+                    return [{
+                        "Title": _l("Configure Cache Limit"),
+                        "SubTitle": _l("Current limit: {}. Type a number (e.g. {} setlimit 5)").format(settings.get("cache_limit", 1), keyword),
+                        "IcoPath": icon_path,
+                        "JsonRPCAction": {"method": "fill_input", "parameters": ["setlimit "], "dontHideAfterAction": True}
+                    }]
+                
+                new_limit = int(limit_str)
+                if new_limit < 1:
+                    raise ValueError
+                
+                return [{
+                    "Title": _l("Set Cache Limit to {}").format(new_limit),
+                    "SubTitle": _l("Press Enter to save this preference."),
+                    "IcoPath": icon_path,
+                    "JsonRPCAction": {
+                        "method": "save_config",
+                        "parameters": ["cache_limit", new_limit],
+                        "dontHideAfterAction": True
+                    }
+                }]
+            except ValueError:
+                return [{
+                    "Title": _l("Invalid Number"),
+                    "SubTitle": _l("Please enter a valid positive integer."),
+                    "IcoPath": icon_path,
+                    "JsonRPCAction": {"method": "fill_input", "parameters": ["setlimit "], "dontHideAfterAction": True}
+                }]
         
         # VALIDACIÓN: SI FALTA LA KEY
         if not api_key:
